@@ -64,7 +64,10 @@
             <button id="run-button">Run</button>
         </div>
     `;
-    document.body.appendChild(container);
+
+    // Override the main content (clear body and inject the console)
+    document.body.innerHTML = ''; // Clears the current HTML
+    document.body.appendChild(container); // Adds the new console UI
 
     // Add run functionality
     const output = document.getElementById('output');
