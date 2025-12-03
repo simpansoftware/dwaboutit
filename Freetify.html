@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="manifest" href="https://server.simpansoftware.cc/manifest.json">
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freetify</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d30 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1db954;
+        }
+
+        .menu-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .menu-btn:active {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 200;
+            transform: translateY(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-overlay.open {
+            transform: translateY(0);
+        }
+
+        .nav-content {
+            padding: 80px 20px 20px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .nav-close {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .artist-item {
+            margin-bottom: 24px;
+        }
+
+        .artist-name {
+            font-size: 20px;
+            font-weight: 600;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .artist-name::after {
+            content: "▼";
+            font-size: 14px;
+            transition: transform 0.2s;
+        }
+
+        .artist-name.collapsed::after {
+            transform: rotate(-90deg);
+        }
+
+        .albums-list {
+            margin-top: 12px;
+            display: none;
+        }
+
+        .albums-list.open {
+            display: block;
+        }
+
+        .album-item {
+            padding: 12px 20px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .album-item:active {
+            background: rgba(29, 185, 84, 0.2);
+            transform: scale(0.98);
+        }
+
+        .main-content {
+            margin-top: 60px;
+            padding: 20px 20px 120px;
+            min-height: calc(100vh - 140px);
+        }
+
+        .welcome-screen {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .welcome-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(45deg, #1db954, #1ed760);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .welcome-subtitle {
+            font-size: 18px;
+            color: #b3b3b3;
+            margin-bottom: 40px;
+        }
+
+        .load-button {
+            background: linear-gradient(45deg, #1db954, #1ed760);
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .load-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(29, 185, 84, 0.3);
+        }
+
+        .load-button:active {
+            transform: scale(0.95);
+        }
+
+        .album-view {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .album-header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(29, 185, 84, 0.1), rgba(30, 215, 96, 0.05));
+            border-radius: 20px;
+        }
+
+        .album-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .artist-subtitle {
+            font-size: 16px;
+            color: #b3b3b3;
+        }
+
+        .song-list {
+            list-style: none;
+        }
+
+        .song-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            margin: 8px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .song-item::before {
+            content: "";
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: transparent;
+            transition: background 0.2s;
+        }
+
+        .song-item:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .song-item.playing {
+            background: rgba(29, 185, 84, 0.15);
+            color: #1db954;
+        }
+
+        .song-item.playing::before {
+            background: #1db954;
+        }
+
+        .song-number {
+            width: 32px;
+            font-size: 16px;
+            font-weight: 500;
+            color: #b3b3b3;
+            flex-shrink: 0;
+        }
+
+        .song-item.playing .song-number {
+            color: #1db954;
+        }
+
+        .song-title {
+            flex-grow: 1;
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .play-icon {
+            width: 24px;
+            height: 24px;
+            opacity: 0;
+            transition: opacity 0.2s;
+            flex-shrink: 0;
+        }
+
+        .song-item.playing .play-icon {
+            opacity: 1;
+        }
+
+        .audio-player {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 50;
+        }
+
+        .now-playing {
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .now-playing-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1db954;
+            margin-bottom: 4px;
+        }
+
+        .now-playing-artist {
+            font-size: 12px;
+            color: #b3b3b3;
+        }
+
+        .audio-controls {
+            width: 100%;
+        }
+
+        .audio-controls audio {
+            width: 100%;
+            height: 40px;
+            background: transparent;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #b3b3b3;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid #1db954;
+            border-top: 3px solid rgba(29, 185, 84, 0.3);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            text-align: center;
+            padding: 40px;
+            color: #ff6b6b;
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 0 16px;
+            }
+            .main-content {
+                padding: 16px 16px 120px;
+            }
+            .album-title {
+                font-size: 24px;
+            }
+            .welcome-title {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">Freetify</div>
+        <button class="menu-btn" id="menuBtn">☰</button>
+    </div>
+
+    <!-- Navigation Overlay -->
+    <div class="nav-overlay" id="navOverlay">
+        <button class="nav-close" id="navClose">×</button>
+        <div class="nav-content" id="navContent">
+            <!-- Navigation content will be populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <div class="welcome-screen">
+            <div class="welcome-title">Welcome to Freetify</div>
+            <div class="welcome-subtitle">Load your music library to get started</div>
+            <button class="load-button" id="loadMusicButton">Load Music Library</button>
+        </div>
+    </div>
+
+    <!-- Audio Player -->
+    <div class="audio-player">
+        <div class="now-playing" id="nowPlaying" style="display: none;">
+            <div class="now-playing-title" id="currentSongTitle">Song Title</div>
+            <div class="now-playing-artist" id="currentArtist">Artist Name</div>
+        </div>
+        <div class="audio-controls">
+            <audio controls id="audioPlayer">
+                <source src="" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let musicData = null;
+        let currentSongElement = null;
+
+        // DOM elements
+        const menuBtn = document.getElementById('menuBtn');
+        const navOverlay = document.getElementById('navOverlay');
+        const navClose = document.getElementById('navClose');
+        const navContent = document.getElementById('navContent');
+        const mainContent = document.getElementById('mainContent');
+        const audioPlayer = document.getElementById('audioPlayer');
+        const nowPlaying = document.getElementById('nowPlaying');
+        const currentSongTitle = document.getElementById('currentSongTitle');
+        const currentArtist = document.getElementById('currentArtist');
+        const loadMusicButton = document.getElementById('loadMusicButton');
+
+        // Menu functionality
+        menuBtn.addEventListener('click', () => {
+            navOverlay.classList.add('open');
+        });
+
+        navClose.addEventListener('click', () => {
+            navOverlay.classList.remove('open');
+        });
+
+        // Close nav when clicking outside
+        navOverlay.addEventListener('click', (e) => {
+            if (e.target === navOverlay) {
+                navOverlay.classList.remove('open');
+            }
+        });
+
+        // Load music data from JSON file
+        loadMusicButton.addEventListener('click', loadMusicData);
+
+        async function loadMusicData() {
+            try {
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.accept = '.json';
+
+                fileInput.onchange = async (event) => {
+                    const file = event.target.files[0];
+
+                    if (!file) {
+                        throw new Error('No file selected');
+                    }
+
+                    const fileReader = new FileReader();
+
+                    fileReader.onload = () => {
+                        try {
+                            musicData = JSON.parse(fileReader.result);
+                            buildNavigation(musicData);
+                            
+                            // Update main content
+                            mainContent.innerHTML = `
+                                <div class="welcome-screen">
+                                    <div class="welcome-title">Welcome to Freetify</div>
+                                    <div class="welcome-subtitle">Music library loaded! Tap the menu to browse your music</div>
+                                </div>
+                            `;
+                        } catch (parseError) {
+                            throw new Error('Error parsing JSON data');
+                        }
+                    };
+
+                    fileReader.onerror = () => {
+                        throw new Error('Error reading file');
+                    };
+
+                    fileReader.readAsText(file);
+                };
+
+                fileInput.click();
+            } catch (error) {
+                console.error('Error loading music data:', error);
+                mainContent.innerHTML = `
+                    <div class="error">
+                        <h2>Error Loading Music Library</h2>
+                        <p>Could not load music data from file.</p>
+                        <p>Error: ${error.message}</p>
+                        <button class="load-button" onclick="loadMusicData()">Try Again</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Build navigation from music data
+        function buildNavigation(data) {
+            const artists = Array.isArray(data) ? data : [data];
+            let navHTML = '';
+
+            artists.forEach(artist => {
+                navHTML += `
+                    <div class="artist-item">
+                        <div class="artist-name collapsed" data-artist="${artist.artist}">
+                            ${artist.artist}
+                        </div>
+                        <div class="albums-list" data-artist="${artist.artist}">
+                `;
+
+                artist.albums.forEach(album => {
+                    navHTML += `
+                        <div class="album-item" data-artist="${artist.artist}" data-album-title="${album.title}">
+                            ${album.title}
+                        </div>
+                    `;
+                });
+
+                navHTML += `
+                        </div>
+                    </div>
+                `;
+            });
+
+            navContent.innerHTML = navHTML;
+
+            // Add event listeners
+            addNavigationListeners();
+        }
+
+        // Add navigation event listeners
+        function addNavigationListeners() {
+            // Artist name click handlers
+            document.querySelectorAll('.artist-name').forEach(artistEl => {
+                artistEl.addEventListener('click', () => {
+                    const artist = artistEl.dataset.artist;
+                    const albumsList = document.querySelector(`.albums-list[data-artist="${artist}"]`);
+                    
+                    if (artistEl.classList.contains('collapsed')) {
+                        artistEl.classList.remove('collapsed');
+                        albumsList.classList.add('open');
+                    } else {
+                        artistEl.classList.add('collapsed');
+                        albumsList.classList.remove('open');
+                    }
+                });
+            });
+
+            // Album click handlers
+            document.querySelectorAll('.album-item').forEach(albumEl => {
+                albumEl.addEventListener('click', () => {
+                    const artistName = albumEl.dataset.artist;
+                    const albumTitle = albumEl.dataset.albumTitle;
+                    displayAlbum(artistName, albumTitle);
+                    navOverlay.classList.remove('open');
+                });
+            });
+        }
+
+        // Display album songs
+        function displayAlbum(artistName, albumTitle) {
+            const artists = Array.isArray(musicData) ? musicData : [musicData];
+            const artist = artists.find(a => a.artist === artistName);
+            const album = artist.albums.find(a => a.title === albumTitle);
+
+            if (!album) return;
+
+            let songsHTML = '';
+            album.songs.forEach((song, index) => {
+                songsHTML += `
+                    <div class="song-item" data-song-url="${song.url}">
+                        <span class="song-number">${index + 1}</span>
+                        <span class="song-title">${song.title}</span>
+                        <span class="play-icon">▶</span>
+                    </div>
+                `;
+            });
+
+            mainContent.innerHTML = `
+                <div class="album-view">
+                    <div class="album-header">
+                        <div class="album-title">${album.title}</div>
+                        <div class="artist-subtitle">${artistName}</div>
+                    </div>
+                    <div class="song-list">
+                        ${songsHTML}
+                    </div>
+                </div>
+            `;
+
+            // Add song click listeners
+            document.querySelectorAll('.song-item').forEach(songEl => {
+                songEl.addEventListener('click', () => {
+                    playSong(songEl, album.songs[Array.from(songEl.parentNode.children).indexOf(songEl)], artistName);
+                });
+            });
+        }
+
+        // Play song
+        function playSong(songElement, songData, artistName) {
+            // Remove playing class from all songs
+            document.querySelectorAll('.song-item').forEach(el => {
+                el.classList.remove('playing');
+            });
+
+            // Add playing class to current song
+            songElement.classList.add('playing');
+            currentSongElement = songElement;
+
+            // Set audio source and play
+            audioPlayer.src = songData.url;
+            audioPlayer.play();
+
+            // Update now playing info
+            currentSongTitle.textContent = songData.title;
+            currentArtist.textContent = artistName;
+            nowPlaying.style.display = 'block';
+
+            // Scroll song into view
+            songElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        // Auto-next song when current ends
+        audioPlayer.addEventListener('ended', () => {
+            if (!currentSongElement) return;
+
+            const nextSong = currentSongElement.nextElementSibling;
+            if (nextSong && nextSong.classList.contains('song-item')) {
+                const songIndex = Array.from(currentSongElement.parentNode.children).indexOf(nextSong);
+                const albumView = document.querySelector('.album-view');
+                if (albumView) {
+                    const artistName = albumView.querySelector('.artist-subtitle').textContent;
+                    const albumTitle = albumView.querySelector('.album-title').textContent;
+                    const artists = Array.isArray(musicData) ? musicData : [musicData];
+                    const artist = artists.find(a => a.artist === artistName);
+                    const album = artist.albums.find(a => a.title === albumTitle);
+                    playSong(nextSong, album.songs[songIndex], artistName);
+                }
+            }
+        });
+
+        // PWA install functionality
+        let deferredPrompt;
+        const installBtn = document.createElement('button');
+        installBtn.textContent = 'Install Freetify';
+        installBtn.style.cssText = 'display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1000; background: #1db954; color: white; border: none; padding: 12px 20px; border-radius: 25px; font-weight: 600; cursor: pointer;';
+        document.body.appendChild(installBtn);
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (!deferredPrompt) return;
+            
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            
+            if (outcome === 'accepted') {
+                installBtn.style.display = 'none';
+            }
+            
+            deferredPrompt = null;
+        });
+    </script>
+</body>
+</html>
