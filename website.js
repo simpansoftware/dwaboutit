@@ -1,0 +1,1 @@
+document.open(); document.write(`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Fullscreen Iframe</title><style>html, body {margin: 0;padding: 0;height: 100%;overflow: hidden;}iframe {position: fixed;top: 0;left: 0;width: 100vw;height: 100vh;border: none;}</style></head><body><iframe src="https://simpansoftware.cc"></iframe></body></html>`); document.close();
