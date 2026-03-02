@@ -16,7 +16,7 @@ document.write(`
     </div>
     <div id="loading-cover" style="display:none;">
       <div id="unity-loading-bar">
-        <div id="unity-logo"><img src="logo.png"></div>
+        <div id="unity-logo"><img src="https://cdn.jsdelivr.net/gh/simpansoftware/dwaboutit/logo.png"></div>
         </br></br></br>
         <div id="unity-progress-bar-empty" style="display: none;">
           <div id="unity-progress-bar-full"></div>
