@@ -7,8 +7,8 @@ document.write(`
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Space Waves</title>
-    <link rel="stylesheet" href="TemplateData/style.css">
-	<link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/simpansoftware/dwaboutit/TemplateData/style.css">
+	<link rel="manifest" href="https://cdn.jsdelivr.net/gh/simpansoftware/dwaboutit/manifest.json">
   </head>
   <body class="noselect">
     <div id="unity-container">
@@ -43,7 +43,7 @@ document.write(`
       const progressBarFull = document.querySelector("#unity-progress-bar-full");
       const spinner = document.querySelector('.spinner');
 
-      const buildUrl = "Build";
+      const buildUrl = "https://cdn.jsdelivr.net/gh/simpansoftware/dwaboutit/Build";
       const loaderUrl = buildUrl + "/dae5c7bd2b15915f51ae4e56b8f5367d.loader.js";
       const config = {
         dataUrl: buildUrl + "/568ea6b3af616bd57f419c508c933303.data.unityweb",
@@ -130,7 +130,7 @@ document.write(`
 	  }
     <\/script>
 	
-	<script src="msstart.js"><\/script>
+	<script src="https://cdn.jsdelivr.net/gh/simpansoftware/dwaboutit/msstart.js"><\/script>
 	
 	<script>
 	
