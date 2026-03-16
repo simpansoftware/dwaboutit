@@ -1,4 +1,4 @@
-if (window !== window.top) return;
+if (window === window.top) {
 
 document.open();
 document.write(`
@@ -40,3 +40,5 @@ document.write(`
 </html>
 `);
 document.close();
+
+}
