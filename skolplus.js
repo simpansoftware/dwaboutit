@@ -1,3 +1,5 @@
+if (window !== window.top) return;
+
 document.open();
 document.write(`
 <!DOCTYPE html>
