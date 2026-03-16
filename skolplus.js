@@ -19,8 +19,16 @@ document.write(`
   
   function removeTarget() {
       const doc = iframe.contentDocument || iframe.contentWindow.document;
+  
+      // remove element with id
       const el = doc.getElementById("demoonly");
       if (el) el.remove();
+  
+      // remove elements with class
+      const els = doc.getElementsByClassName("topbarright");
+      while (els.length > 0) {
+          els[0].remove();
+      }
   }
   
   iframe.addEventListener("load", () => {
