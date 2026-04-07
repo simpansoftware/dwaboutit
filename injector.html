@@ -41,7 +41,10 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 12px;
+      cursor: grab;
+      user-select: none;
     }
+    #panel-header:active { cursor: grabbing; }
 
     #panel-header span {
       font-size: 12px;
@@ -192,6 +195,32 @@
       btn.textContent = "Show";
     }
   }
+
+  (function makeDraggable() {
+    const panel = document.getElementById("panel");
+    const header = document.getElementById("panel-header");
+    let dragging = false, ox = 0, oy = 0;
+
+    header.addEventListener("mousedown", e => {
+      if (e.target.tagName === "BUTTON") return;
+      dragging = true;
+      ox = e.clientX - panel.offsetLeft;
+      oy = e.clientY - panel.offsetTop;
+      panel.style.transition = "none";
+    });
+
+    document.addEventListener("mousemove", e => {
+      if (!dragging) return;
+      let x = e.clientX - ox;
+      let y = e.clientY - oy;
+      x = Math.max(0, Math.min(window.innerWidth - panel.offsetWidth, x));
+      y = Math.max(0, Math.min(window.innerHeight - panel.offsetHeight, y));
+      panel.style.left = x + "px";
+      panel.style.top = y + "px";
+    });
+
+    document.addEventListener("mouseup", () => { dragging = false; });
+  })();
 
   function setStatus(msg, cls) {
     const s = document.getElementById("status");
