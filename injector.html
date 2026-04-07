@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Iframe JS Injector</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 15px;
+            background: #111;
+            color: #eee;
+        }
+        input, textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            background: #222;
+            color: #eee;
+            border: 1px solid #444;
+            padding: 8px;
+        }
+        button {
+            padding: 10px;
+            background: #0a84ff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        iframe {
+            width: 100%;
+            height: 500px;
+            border: 1px solid #444;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Iframe JS Injector (Same-Origin)</h2>
+
+<label>Target URL:</label> <input id="url" value="http://localhost:8000/games/index.html">
+
+<label>JavaScript to inject:</label>
+
+<textarea id="code" rows="6">alert("Injected!");</textarea>
+
+<button onclick="loadAndInject()">Load + Inject</button>
+
+<iframe id="frame"></iframe>
+
+<script>
+function loadAndInject() {
+    const url = document.getElementById("url").value;
+    const code = document.getElementById("code").value;
+    const iframe = document.getElementById("frame");
+
+    iframe.src = url;
+
+    iframe.onload = () => {
+        try {
+            const win = iframe.contentWindow;
+
+            // Try eval
+            win.eval(code);
+
+            // Also try script injection (more reliable sometimes)
+            const script = win.document.createElement("script");
+            script.textContent = code;
+            win.document.body.appendChild(script);
+
+            console.log("Injected successfully");
+        } catch (e) {
+            console.error("Injection failed:", e);
+        }
+    };
+}
+</script>
+
+</body>
+</html>
