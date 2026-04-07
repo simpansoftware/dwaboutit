@@ -1,118 +1,203 @@
 <!DOCTYPE html>
-
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Iframe Injector</title>
-    <style>
-        body {
-            margin: 0;
-            overflow: hidden;
-            font-family: sans-serif;
-            background: #000;
-        }
+  <meta charset="UTF-8">
+  <title>Injector</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-```
-    /* Fullscreen iframe */
+    body {
+      overflow: hidden;
+      background: #0d0d0d;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
     iframe {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border: none;
-        z-index: 0;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 0;
     }
 
-    /* Overlay panel */
     #panel {
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        width: 300px;
-        background: rgba(20, 20, 20, 0.9);
-        color: #eee;
-        padding: 10px;
-        border: 1px solid #444;
-        z-index: 10;
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      width: 300px;
+      background: rgba(18, 18, 18, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 14px;
+      z-index: 10;
+      color: #e0e0e0;
     }
 
-    input, textarea {
-        width: 100%;
-        margin-bottom: 8px;
-        background: #222;
-        color: #eee;
-        border: 1px solid #444;
-        padding: 6px;
+    #panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
     }
 
-    button {
-        width: 100%;
-        padding: 8px;
-        background: #0a84ff;
-        color: white;
-        border: none;
-        cursor: pointer;
+    #panel-header span {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #888;
     }
 
     #toggle {
-        margin-top: 5px;
-        background: #555;
+      font-size: 11px;
+      padding: 3px 8px;
+      background: rgba(255,255,255,0.07);
+      color: #aaa;
+      border: 0.5px solid rgba(255,255,255,0.12);
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.15s;
     }
-</style>
-```
+    #toggle:hover { background: rgba(255,255,255,0.12); color: #ddd; }
 
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: #666;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+
+    .field { margin-bottom: 10px; }
+
+    input[type="text"], textarea {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      color: #e0e0e0;
+      border: 0.5px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      padding: 7px 9px;
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+      resize: vertical;
+    }
+    input[type="text"]:focus, textarea:focus {
+      border-color: rgba(255,255,255,0.25);
+    }
+    input[type="text"]::placeholder, textarea::placeholder {
+      color: #444;
+    }
+
+    textarea { font-family: "SF Mono", "Fira Code", monospace; font-size: 12px; }
+
+    #run-btn {
+      width: 100%;
+      padding: 8px;
+      background: #1a6bff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+    }
+    #run-btn:hover { background: #2a7aff; }
+    #run-btn:active { transform: scale(0.98); }
+
+    #status {
+      font-size: 11px;
+      color: #555;
+      margin-top: 8px;
+      min-height: 14px;
+    }
+    #status.ok { color: #4caf82; }
+    #status.err { color: #e05555; }
+  </style>
 </head>
 <body>
 
 <div id="panel">
-    <b>Injector</b><br>
+  <div id="panel-header">
+    <span>Injector</span>
+    <button id="toggle" onclick="togglePanel()">Hide</button>
+  </div>
 
-```
-<input id="url" placeholder="Enter URL...">
+  <div class="field">
+    <label>URL</label>
+    <input type="text" id="url" placeholder="https://example.com">
+  </div>
 
-<textarea id="code" rows="5" placeholder="Enter JS..."></textarea>
+  <div class="field">
+    <label>JavaScript</label>
+    <textarea id="code" rows="5" placeholder="document.body.style.background = 'red'"></textarea>
+  </div>
 
-<button onclick="loadAndInject()">Load + Inject</button>
-<button id="toggle" onclick="togglePanel()">Hide Panel</button>
-```
-
+  <button id="run-btn" onclick="loadAndInject()">Load + Inject</button>
+  <div id="status"></div>
 </div>
 
 <iframe id="frame"></iframe>
 
 <script>
-function loadAndInject() {
-    const url = document.getElementById("url").value;
-    const code = document.getElementById("code").value;
+  function loadAndInject() {
+    const url = document.getElementById("url").value.trim();
+    const code = document.getElementById("code").value.trim();
     const iframe = document.getElementById("frame");
+    const status = document.getElementById("status");
 
+    if (!url) { setStatus("Enter a URL first.", "err"); return; }
+
+    setStatus("Loading…", "");
     iframe.src = url;
 
     iframe.onload = () => {
-        try {
-            const win = iframe.contentWindow;
-
-            // eval
-            if (code.trim()) {
-                win.eval(code);
-
-                const script = win.document.createElement("script");
-                script.textContent = code;
-                win.document.body.appendChild(script);
-            }
-
-            console.log("Injected");
-        } catch (e) {
-            console.error("Injection failed:", e);
+      try {
+        const win = iframe.contentWindow;
+        if (code) {
+          win.eval(code);
+          const s = win.document.createElement("script");
+          s.textContent = code;
+          win.document.body.appendChild(s);
         }
+        setStatus("Injected.", "ok");
+      } catch (e) {
+        setStatus("Blocked: " + e.message, "err");
+      }
     };
-}
+  }
 
-function togglePanel() {
+  function togglePanel() {
     const panel = document.getElementById("panel");
-    panel.style.display = panel.style.display === "none" ? "block" : "none";
-}
+    const btn = document.getElementById("toggle");
+    const body = document.getElementById("panel").querySelector("#panel-header + *");
+    const isCollapsed = panel.dataset.collapsed === "1";
+
+    if (isCollapsed) {
+      panel.style.height = "";
+      panel.style.overflow = "";
+      panel.dataset.collapsed = "0";
+      btn.textContent = "Hide";
+      Array.from(panel.children).forEach((el, i) => { if (i > 0) el.style.display = ""; });
+    } else {
+      Array.from(panel.children).forEach((el, i) => { if (i > 0) el.style.display = "none"; });
+      panel.dataset.collapsed = "1";
+      btn.textContent = "Show";
+    }
+  }
+
+  function setStatus(msg, cls) {
+    const s = document.getElementById("status");
+    s.textContent = msg;
+    s.className = cls;
+  }
 </script>
 
 </body>
