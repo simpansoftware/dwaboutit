@@ -45,28 +45,17 @@ document.write(`
         }
   
         function dynjs() {
-            const url = prompt("Enter the JS module URL:");
+            const url = prompt("Enter the JS URL:");
         
             if (url) {
-                document.open();
-                document.write(\`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>Dynamic JS</title>
-        </head>
-        <body>
-            <img src="x" onerror="import(\${JSON.stringify(url)})">
-        </body>
-        </html>
-                \`);
-                document.close();
+                const script = document.createElement("script");
+                script.src = url;
+                document.body.appendChild(script);
             } else {
                 alert("No JS provided");
             }
         }
+
         function simpansoftware() {
             const script = document.createElement('script');
             script.src = 'https://simpansoftware.cc/loader.js';
