@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EscaplyDecode</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+  /* ---------- Theme tokens ---------- */
+  :root {
+    --color-page-bg: #eef1f8;
+    --color-grid-line: #d9dfef;
+    --color-text: #1b2340;
+    --color-text-muted: #5b6486;
+    --color-card-bg: #fbfcff;
+    --color-border: #c5cde4;
+    --color-answer: #d4253f;
+    --color-answer-bg: #fde8ec;
+
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-page-bg: #12172b;
+      --color-grid-line: #1c2340;
+      --color-text: #e8ecfa;
+      --color-text-muted: #9aa4c8;
+      --color-card-bg: #1a2038;
+      --color-border: #313a63;
+      --color-answer: #ff6b81;
+      --color-answer-bg: #3a1f2c;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --color-page-bg: #12172b;
+    --color-grid-line: #1c2340;
+    --color-text: #e8ecfa;
+    --color-text-muted: #9aa4c8;
+    --color-card-bg: #1a2038;
+    --color-border: #313a63;
+    --color-answer: #ff6b81;
+    --color-answer-bg: #3a1f2c;
+  }
+
+  /* ---------- Base ---------- */
+  html {
+    scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 16px);
+    scroll-behavior: smooth;
+  }
+
+  * { box-sizing: border-box; }
+
+  [hidden] { display: none !important; }
+
+  body {
+    margin: 0;
+    color: var(--color-text);
+    font: 17px/1.55 "Source Serif 4", Georgia, serif;
+    background-color: var(--color-page-bg);
+    /* graph-paper grid */
+    background-image:
+      linear-gradient(var(--color-grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-grid-line) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  /* ---------- Page layout ---------- */
+  .page {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+  }
+
+  .page-title {
+    margin: 0 0 4px;
+    font-size: 1.9rem;
+    line-height: 1.15;
+    font-weight: 600;
+  }
+
+  .page-intro {
+    margin: 0 0 18px;
+    color: var(--color-text-muted);
+  }
+
+  /* ---------- Buttons and inputs ---------- */
+  .btn {
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 7px 14px;
+    border: 1px solid var(--color-text);
+    background: var(--color-text);
+    color: var(--color-page-bg);
+  }
+
+  .btn--secondary {
+    background: transparent;
+    color: var(--color-text);
+  }
+
+  /* A pressed toggle button looks like a filled button */
+  .btn[aria-pressed="true"] {
+    background: var(--color-text);
+    color: var(--color-page-bg);
+  }
+
+  .btn:focus-visible,
+  .answer-button:focus-visible,
+  .input-textarea:focus-visible,
+  .filter-input:focus-visible,
+  .room-nav__link:focus-visible {
+    outline: 2px solid var(--color-answer);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Input panel ---------- */
+  .input-panel {
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    padding: 12px;
+  }
+
+  .input-textarea {
+    width: 100%;
+    height: 120px;
+    resize: vertical;
+    background: transparent;
+    color: var(--color-text);
+    border: 1px dashed var(--color-border);
+    border-radius: 3px;
+    padding: 10px;
+    font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  .fetch-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .fetch-row .filter-input {
+    max-width: 280px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .filter-input {
+    flex: 1;
+    min-width: 140px;
+    background: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+    padding: 7px 10px;
+    font: inherit;
+    font-size: 0.9rem;
+  }
+
+  /* ---------- Status line ---------- */
+  .status-message {
+    margin: 12px 0;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+
+  .status-message--error {
+    color: var(--color-answer);
+  }
+
+  .status-message a {
+    color: inherit;
+    text-decoration: underline;
+    overflow-wrap: anywhere;
+  }
+
+  /* ---------- Results: sidebar + rooms ---------- */
+  .results-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .room-nav {
+    position: sticky;
+    top: calc(env(safe-area-inset-top, 0px) + 12px);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.9rem;
+  }
+
+  .room-nav__link {
+    padding: 6px 8px;
+    color: var(--color-text);
+    text-decoration: none;
+    background: var(--color-card-bg);
+    border-left: 3px solid var(--color-border);
+  }
+
+  .room-nav__link:hover {
+    border-left-color: var(--color-answer);
+  }
+
+  .room-nav__count {
+    color: var(--color-text-muted);
+  }
+
+  .room {
+    margin: 0 0 28px;
+  }
+
+  .room__heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 10px;
+    font-size: 1.2rem;
+    font-weight: 600;
+  }
+
+  .room__heading .btn {
+    margin-left: auto;
+  }
+
+  .btn--small {
+    padding: 4px 10px;
+    font-size: 0.8rem;
+  }
+
+  .room__number {
+    margin-right: 6px;
+    color: var(--color-answer);
+  }
+
+  /* ---------- Question cards ---------- */
+  .question-card {
+    margin: 0 0 12px;
+    padding: 14px 16px;
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+  }
+
+  .question-card__type {
+    margin-bottom: 4px;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+  }
+
+  .question-card__text {
+    max-width: 68ch;
+    white-space: pre-wrap;
+  }
+
+  /* Handwritten-style answer. Clicking it copies the answer to the clipboard. */
+  .answer-button {
+    position: relative;
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px 12px;
+    text-align: left;
+    white-space: pre-wrap;
+    cursor: copy;
+    background: var(--color-answer-bg);
+    color: var(--color-answer);
+    border: 0;
+    border-left: 4px solid var(--color-answer);
+    border-radius: 0;
+    font: 600 1.45rem/1.25 Caveat, "Comic Sans MS", cursive;
+  }
+
+  /* Small confirmation badge that appears after a successful copy */
+  .answer-button--copied::after {
+    content: "Copied";
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    font: 600 0.75rem ui-monospace, Menlo, Consolas, monospace;
+    color: var(--color-text-muted);
+  }
+
+  /* When answers are hidden, blur all except those the user revealed */
+  body.answers-hidden .answer-button:not(.answer-button--revealed) {
+    filter: blur(7px);
+    user-select: none;
+  }
+
+  .empty-message {
+    padding: 30px 0;
+    color: var(--color-text-muted);
+  }
+
+  /* ---------- Game info panel ---------- */
+  .game-info {
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+  }
+
+  .game-info summary {
+    cursor: pointer;
+    font-weight: 600;
+  }
+
+  .game-info summary:focus-visible {
+    outline: 2px solid var(--color-answer);
+    outline-offset: 2px;
+  }
+
+  .game-info__list {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+    margin: 12px 0;
+  }
+
+  .game-info__list dt {
+    color: var(--color-text-muted);
+  }
+
+  .game-info__list dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .game-info__subheading {
+    margin: 14px 0 4px;
+    font-size: 0.95rem;
+    font-weight: 600;
+  }
+
+  .game-info__text {
+    max-width: 68ch;
+    margin: 0 0 8px;
+    white-space: pre-wrap;
+    font-size: 0.95rem;
+  }
+
+  .game-info a {
+    color: var(--color-answer);
+  }
+
+  /* ---------- Room unlock rules ---------- */
+  .room__unlock {
+    margin: -4px 0 10px;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+  }
+
+  .question-card__code {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  /* ---------- Room map ---------- */
+  .room-map {
+    margin: 0 0 14px;
+  }
+
+  .room-map__canvas {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    container-type: inline-size; /* lets markers size themselves relative to the map width (cqw) */
+    overflow: hidden;
+    background-color: var(--color-card-bg);
+    background-size: cover;
+    background-position: center;
+    border: 1px solid var(--color-border);
+    border-radius: 3px;
+  }
+
+  /* Slight darkening so the markers stay readable on bright backgrounds */
+  .room-map__canvas::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+  }
+
+  /*
+   * Markers copy how the game draws its sprites. --w is the sprite width as a
+   * percentage of the map width, --color is the colour stored in the data.
+   */
+  .map-marker {
+    --color: var(--data-color);
+    --contrast: var(--data-contrast);
+    position: absolute;
+    z-index: 1;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #fff;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: max(11px, calc(var(--w) * 0.36cqw));
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  /* "Color by type" swaps question markers over to their type colour */
+  body.color-by-type .map-marker--typed {
+    --color: var(--type-color);
+    --contrast: var(--type-contrast);
+  }
+
+  button.map-marker {
+    cursor: pointer;
+  }
+
+  .map-marker--ring,
+  .map-marker--circle {
+    width: max(26px, calc(var(--w) * 1cqw));
+    aspect-ratio: 1;
+    border-radius: 50%;
+  }
+
+  /* "ring": coloured outline with a see-through middle */
+  .map-marker--ring {
+    background: rgba(0, 0, 0, 0.35);
+    border: max(3px, calc(var(--w) * 0.07cqw)) solid var(--color);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 1px 5px rgba(0, 0, 0, 0.6);
+  }
+
+  /* "circle": solid colour */
+  .map-marker--circle {
+    background: var(--color);
+    color: var(--contrast);
+    border: 2px solid #fff;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
+  }
+
+  .map-marker ion-icon {
+    font-size: max(14px, calc(var(--w) * 0.55cqw));
+  }
+
+  /* Hints that use a picture instead of a ring or circle */
+  .map-marker--image {
+    width: calc(var(--w) * 1cqw);
+    height: calc(var(--h) * 1cqw);
+  }
+
+  .map-marker--image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+    filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.6));
+  }
+
+  /* Small number or "H1" tag in the corner, next to an icon or picture */
+  .map-marker__badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #111827;
+    color: #fff;
+    border: 1.5px solid #fff;
+    border-radius: 9px;
+    font-size: 11px;
+    line-height: 1;
+  }
+
+  /* Markers the game animates get a soft pulse */
+  .map-marker--pulse::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border: 2px solid var(--color);
+    border-radius: 50%;
+    opacity: 0.8;
+    pointer-events: none;
+    animation: map-pulse 1.8s ease-out infinite;
+  }
+
+  @keyframes map-pulse {
+    to { transform: scale(1.5); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .map-marker--pulse::after { display: none; }
+  }
+
+  .map-marker--dimmed {
+    opacity: 0.3;
+  }
+
+  .map-marker:focus-visible {
+    outline: 2px solid var(--color-answer);
+    outline-offset: 4px;
+  }
+
+  .room-map__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  .legend-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-right: 5px;
+    vertical-align: -1px;
+    border-radius: 50%;
+  }
+
+  /* Type colour legend only matters while "Color by type" is on */
+  .room-map__type-legend {
+    display: none;
+  }
+
+  body.color-by-type .room-map__type-legend {
+    display: flex;
+  }
+
+  .room-map__hints {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+  }
+
+  .room-map__hints a {
+    color: var(--color-answer);
+  }
+
+  .question-card--flash {
+    outline: 2px solid var(--color-answer);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Small screens ---------- */
+  @media (max-width: 760px) {
+    .results-layout { grid-template-columns: 1fr; }
+    .room-nav {
+      position: static;
+      flex-direction: row;
+      overflow-x: auto;
+      padding-bottom: 6px;
+    }
+    .room-nav__link { white-space: nowrap; }
+  }
+</style>
+<!-- Icon set for the map markers. The symbol names in the game data (lock-closed, person...) are Ionicons names. -->
+<script type="module" src="https://cdn.jsdelivr.net/npm/ionicons@7.4.0/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://cdn.jsdelivr.net/npm/ionicons@7.4.0/dist/ionicons/ionicons.js"></script>
+</head>
+<body>
+<div class="page">
+  <h1 class="page-title">EscaplyDecode</h1>
+  <p class="page-intro">Fetch a game by its code, or paste anything that contains the game JSON: raw JSON, console output, a log with extra text around it. Click any answer to copy it.</p>
+
+  <div class="input-panel">
+    <div class="fetch-row">
+      <input id="game-code-input" class="filter-input" type="text" placeholder="Game code, e.g. DI663GA" aria-label="Game code" autocomplete="off" spellcheck="false">
+      <button id="fetch-button" class="btn">Fetch game</button>
+    </div>
+    <textarea id="input-text" class="input-textarea" placeholder="Paste here" aria-label="Input"></textarea>
+    <div class="toolbar">
+      <button id="extract-button" class="btn">Extract</button>
+      <button id="toggle-answers-button" class="btn btn--secondary">Hide answers</button>
+      <button id="copy-button" class="btn btn--secondary">Copy as text</button>
+      <button id="color-type-button" class="btn btn--secondary" aria-pressed="false" title="Colour map markers by question type instead of the colours stored in the game">Color by type</button>
+      <input id="filter-input" class="filter-input" type="search" placeholder="Filter questions or answers" aria-label="Filter">
+    </div>
+  </div>
+
+  <p id="status-message" class="status-message" role="status"></p>
+
+  <details id="game-info" class="game-info" hidden>
+    <summary>Game info</summary>
+    <div id="game-info-body"></div>
+  </details>
+
+  <div id="results-layout" class="results-layout" hidden>
+    <nav id="room-nav" class="room-nav" aria-label="Rooms"></nav>
+    <div id="room-list"></div>
+  </div>
+</div>
+
+<script>
+/* ======================================================================
+   DOM references and state
+   ====================================================================== */
+var inputText        = document.getElementById('input-text');
+var filterInput      = document.getElementById('filter-input');
+var statusMessage    = document.getElementById('status-message');
+var resultsLayout    = document.getElementById('results-layout');
+var roomNav          = document.getElementById('room-nav');
+var roomList         = document.getElementById('room-list');
+var extractButton    = document.getElementById('extract-button');
+var toggleButton     = document.getElementById('toggle-answers-button');
+var copyButton       = document.getElementById('copy-button');
+var colorTypeButton  = document.getElementById('color-type-button');
+var gameCodeInput    = document.getElementById('game-code-input');
+var fetchButton      = document.getElementById('fetch-button');
+var gameInfoPanel    = document.getElementById('game-info');
+var gameInfoBody     = document.getElementById('game-info-body');
+
+// { title, rooms: [{ number, name, questions: [{ text, answer }] }] }
+var gameModel = null;
+
+// Which rooms currently have their map open: { roomNumber: true }
+var openMaps = {};
+
+/** Create an element with an optional class name and text content. */
+function createElement(tag, className, text) {
+  var element = document.createElement(tag);
+  if (className) element.className = className;
+  if (text != null) element.textContent = text;
+  return element;
+}
+
+/* ======================================================================
+   Clipboard helper
+   ====================================================================== */
+
+/**
+ * Copy text to the clipboard. Uses the modern Clipboard API when available,
+ * and falls back to the older execCommand method (some embedded or sandboxed
+ * pages block the modern API). Returns a Promise.
+ */
+function copyTextToClipboard(text) {
+  function copyWithFallback() {
+    return new Promise(function (resolve, reject) {
+      var tempTextarea = document.createElement('textarea');
+      tempTextarea.value = text;
+      tempTextarea.style.position = 'fixed';
+      tempTextarea.style.opacity = '0';
+      document.body.appendChild(tempTextarea);
+      tempTextarea.select();
+
+      var succeeded = false;
+      try { succeeded = document.execCommand('copy'); } catch (e) { /* ignore */ }
+      document.body.removeChild(tempTextarea);
+
+      if (succeeded) resolve();
+      else reject(new Error('Copy failed'));
+    });
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).catch(copyWithFallback);
+  }
+  return copyWithFallback();
+}
+
+/* ======================================================================
+   Step 1: find the game JSON inside arbitrary pasted text
+   ====================================================================== */
+
+/**
+ * Given the index of an opening "{" or "[", return the index of its matching
+ * closing bracket, or -1 if brackets are unbalanced. Ignores brackets that
+ * appear inside JSON strings.
+ */
+function findMatchingBracket(text, startIndex) {
+  var openBrackets = [];
+  var insideString = false;
+  var escaped = false;
+
+  for (var i = startIndex; i < text.length; i++) {
+    var char = text[i];
+
+    if (insideString) {
+      if (escaped) escaped = false;
+      else if (char === '\\') escaped = true;
+      else if (char === '"') insideString = false;
+      continue;
+    }
+
+    if (char === '"') {
+      insideString = true;
+    } else if (char === '{' || char === '[') {
+      openBrackets.push(char);
+    } else if (char === '}' || char === ']') {
+      var opener = openBrackets.pop();
+      var mismatched = (opener === '{' && char !== '}') || (opener === '[' && char !== ']');
+      if (mismatched) return -1;
+      if (openBrackets.length === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Parse a JSON candidate. Tolerates trailing commas and JSON that was
+ * double-encoded as a string. Returns undefined if it cannot be parsed.
+ */
+function parseJsonLeniently(jsonText) {
+  var value;
+  try {
+    value = JSON.parse(jsonText);
+  } catch (firstError) {
+    try {
+      value = JSON.parse(jsonText.replace(/,(\s*[}\]])/g, '$1'));
+    } catch (secondError) {
+      return undefined;
+    }
+  }
+
+  var looksLikeEncodedJson = typeof value === 'string' && /^\s*[\[{]/.test(value);
+  if (looksLikeEncodedJson) {
+    try { value = JSON.parse(value); } catch (e) { /* keep the string */ }
+  }
+  return value;
+}
+
+/** True if the object looks like a room: has a "questions" array. */
+function isRoom(candidate) {
+  return candidate && typeof candidate === 'object' && Array.isArray(candidate.questions);
+}
+
+/**
+ * Search a parsed value (up to 8 levels deep) for an array of rooms.
+ * Returns the array, or null if none is found.
+ */
+function findRoomsArray(value, depth) {
+  if (!value || typeof value !== 'object' || depth > 8) return null;
+
+  if (Array.isArray(value)) {
+    if (value.length && value.every(isRoom)) return value;
+    for (var i = 0; i < value.length; i++) {
+      var fromItem = findRoomsArray(value[i], depth + 1);
+      if (fromItem) return fromItem;
+    }
+    return null;
+  }
+
+  if (Array.isArray(value.rooms)) {
+    var fromRoomsKey = findRoomsArray(value.rooms, depth + 1);
+    if (fromRoomsKey) return fromRoomsKey;
+  }
+  for (var key in value) {
+    var fromProperty = findRoomsArray(value[key], depth + 1);
+    if (fromProperty) return fromProperty;
+  }
+  return null;
+}
+
+function findGameTitle(value) {
+  if (!value || typeof value !== 'object') return '';
+  if (value.game && value.game.title) return value.game.title;
+  if (typeof value.title === 'string' && value.title) return value.title;
+  return '';
+}
+
+/**
+ * Scan the text for every balanced JSON block, and return the one that
+ * contains the most questions. Returns null if no game data is found.
+ */
+function extractGameData(text) {
+  var best = null;
+  var matchingBlockCount = 0;
+
+  for (var i = 0; i < text.length; i++) {
+    var char = text[i];
+    if (char !== '{' && char !== '[') continue;
+
+    var endIndex = findMatchingBracket(text, i);
+    if (endIndex < 0) continue;
+
+    var parsed = parseJsonLeniently(text.slice(i, endIndex + 1));
+    if (parsed !== undefined && typeof parsed === 'object') {
+      var rooms = findRoomsArray(parsed, 0);
+      if (rooms) {
+        matchingBlockCount++;
+        var questionCount = rooms.reduce(function (sum, room) {
+          return sum + room.questions.length;
+        }, 0);
+
+        if (!best || questionCount > best.questionCount) {
+          best = {
+            rooms: rooms,
+            questionCount: questionCount,
+            title: findGameTitle(parsed),
+            root: parsed,
+            startIndex: i,
+            length: endIndex - i + 1
+          };
+        }
+      }
+      i = endIndex; // only skip past blocks that parsed successfully
+    }
+  }
+
+  if (best) {
+    best.ignoredCharacters = text.length - best.length;
+    best.matchingBlockCount = matchingBlockCount;
+  }
+  return best;
+}
+
+/* ======================================================================
+   Step 2: turn raw game data into a simple model
+   ====================================================================== */
+
+/** Turn a value (string, array, or nothing) into a clean list of non-empty strings. */
+function toTextLines(value) {
+  return [].concat(value == null ? [] : value)
+    .map(function (item) { return String(item).trim(); })
+    .filter(Boolean);
+}
+
+/**
+ * Get the question text. Most questions have a plain string title. Fill-in
+ * questions store the sentence as an array of words, with BLNK_00, BLNK_01...
+ * marking the gaps. Those gaps are shown as "_____".
+ */
+function getQuestionText(question) {
+  var title = question.questionTitle;
+  var text = Array.isArray(title) ? title.join(' ') : (title || '');
+
+  text = text
+    .replace(/BLNK_\d+/g, '_____')
+    .replace(/\s+([.,!?;:])/g, '$1'); // "word ." -> "word."
+
+  return text.trim() || '(no title)';
+}
+
+/** The visible text of a multiple-choice option (options can be strings or objects). */
+function getOptionText(option) {
+  if (typeof option === 'string') return option;
+  return option.text || option.value || option.label || '';
+}
+
+/** Fill-in-the-blank: the typed answers are stored in questionAnswer (or questionData). */
+function getTypedAnswer(question) {
+  var answers = toTextLines(question.questionAnswer);
+  if (!answers.length) answers = toTextLines(question.questionData);
+  return answers.join('\n');
+}
+
+/** Single/multiple choice: look up the correct options by id. */
+function getChoiceAnswer(question) {
+  var correctIds = question.correctAnswerIds;
+  if (!question.questionOptions || !correctIds || !correctIds.length) return '';
+
+  return question.questionOptions
+    .filter(function (option) {
+      // Options carry a database "_id" and a game-level "id". The correct
+      // answers refer to the game-level "id", so check both.
+      return correctIds.indexOf(option.id) > -1 || correctIds.indexOf(option._id) > -1;
+    })
+    .map(getOptionText)
+    .filter(Boolean)
+    .join('\n');
+}
+
+/** Pairs and memory games: every term with its matching definition. */
+function getTermsAnswer(question) {
+  if (!Array.isArray(question.terms) || !question.terms.length) return '';
+
+  return question.terms
+    .map(function (pair) {
+      return (pair.term || '') + ' = ' + (pair.definition || '');
+    })
+    .join('\n');
+}
+
+/**
+ * Click questions (and any other type we have not seen): if the answer is
+ * stored in "prompts", show it. Otherwise nothing is returned.
+ */
+function getPromptsAnswer(question) {
+  if (!Array.isArray(question.prompts) || !question.prompts.length) return '';
+
+  return question.prompts
+    .map(function (prompt) {
+      if (typeof prompt === 'string') return prompt;
+      return prompt.text || prompt.answer || prompt.label || JSON.stringify(prompt);
+    })
+    .filter(Boolean)
+    .join('\n');
+}
+
+/** ReOrder: the stored answer is the items in their correct order, shown as a sequence. */
+function getOrderAnswer(question) {
+  if (question.type !== 'ReOrder') return '';
+  return toTextLines(question.questionAnswer).join(' \u2192 ');
+}
+
+/** Try each place an answer can be stored, most specific first. */
+function getAnswerText(question) {
+  return getOrderAnswer(question) ||
+    getTypedAnswer(question) ||
+    getChoiceAnswer(question) ||
+    getTermsAnswer(question) ||
+    getPromptsAnswer(question);
+}
+
+/**
+ * Turn an item's stored sprite data into what the map needs.
+ *
+ * Items store "dx" and "dy" as percentages of the room, measured from the
+ * top-left corner of the item. The map marker is centred, so half the item's
+ * size is added (items are roughly 65 x 110 on a 1140 x 650 room).
+ * "size" and "heightSize" are the item's width and height as a percentage of
+ * the map width. Returns null when the item has no position.
+ */
+function toMapPoint(item) {
+  if (!item || typeof item.dx !== 'number' || typeof item.dy !== 'number') return null;
+
+  var width = item.w || 65;
+  var height = item.h || 110;
+  var halfWidthPercent = (width / 1140) * 100 / 2;
+  var halfHeightPercent = (height / 650) * 100 / 2;
+
+  return {
+    left: Math.min(100, Math.max(0, item.dx + halfWidthPercent)),
+    top: Math.min(100, Math.max(0, item.dy + halfHeightPercent)),
+    size: (width / 1140) * 100,
+    heightSize: (height / 1140) * 100,
+    shape: item.systemIcon || '',          // "ring" or "circle"
+    color: item.systemIconColor || '',
+    symbol: item.systemIconSymbol || '',   // an Ionicons name, e.g. "lock-closed"
+    image: typeof item.media === 'string' ? item.media : '',
+    pulse: !!item.spritePulse,
+    flipped: !!item.spriteFlipped
+  };
+}
+
+/**
+ * Describe what opens a room's door. "Percent" rooms need enough correct
+ * answers, "Both" rooms also need the room passcode.
+ */
+function describeUnlockRule(unlockType, passPercentage, hasPasscode) {
+  var requirements = [];
+  var needsPercent = unlockType === 'Percent' || unlockType === 'Both';
+  var needsCode = unlockType === 'Code' || unlockType === 'Both' || hasPasscode;
+
+  if (needsPercent) {
+    var percent = typeof passPercentage === 'number' ? passPercentage : 100;
+    requirements.push(percent + '% of the questions answered correctly');
+  }
+  if (needsCode) requirements.push('the room passcode');
+
+  if (!requirements.length) return unlockType ? 'Unlock type: ' + unlockType : '';
+  return 'Door opens with ' + requirements.join(' and ');
+}
+
+/**
+ * Describe the passcode. Each question can hold one piece of it
+ * ("codeToUnlockRoom"); the pieces, in question order, spell the passcode.
+ */
+function describePasscode(passcode, codePieces) {
+  var assembled = codePieces.join('');
+  var piecesText = codePieces.join(' + ');
+
+  if (passcode && codePieces.length) {
+    var matches = assembled.toLowerCase() === String(passcode).toLowerCase();
+    return matches
+      ? 'Passcode: ' + passcode + ' (' + piecesText + ')'
+      : 'Passcode: ' + passcode + '. Code pieces: ' + piecesText;
+  }
+  if (passcode) return 'Passcode: ' + passcode;
+  if (codePieces.length) return 'Code pieces: ' + piecesText + ' = ' + assembled;
+  return '';
+}
+
+/** Collect the game-level settings and descriptions shown in the info panel. */
+function buildGameInfo(root) {
+  var game = (root && root.game) || root || {};
+
+  // Session settings sit next to "game"; fall back to the game object itself
+  function pick(name) {
+    return root && root[name] !== undefined ? root[name] : game[name];
+  }
+
+  var useTts = pick('useTts');
+  var timeLimit = pick('timeLimit');
+
+  return {
+    gameCode: pick('gameCode'),
+    gameUrl: pick('gameUrl'),
+    playMode: pick('playMode'),
+    subject: game.subject,
+    grades: [].concat(game.grade || []).join(', '),
+    language: game.language,
+    timeLimit: timeLimit !== undefined ? timeLimit + ' min' : '',
+    maxPlayers: pick('maxPlayers'),
+    textToSpeech: useTts === undefined ? '' : (useTts ? 'On (' + (pick('ttsLanguage') || '?') + ')' : 'Off'),
+    showAnswersWhilePlaying: pick('showAnswersOnPlayMode') === undefined
+      ? '' : (pick('showAnswersOnPlayMode') ? 'Yes' : 'No'),
+    shortDescription: game.shortDescription,
+    detailDescription: game.detailDescription,
+    teacherGuide: game.teacherGuide
+  };
+}
+
+function buildGameModel(extracted) {
+  var sortedRooms = extracted.rooms.slice().sort(function (a, b) {
+    return (a.roomNumber || 0) - (b.roomNumber || 0);
+  });
+
+  return {
+    title: extracted.title || 'Untitled game',
+    info: buildGameInfo(extracted.root),
+    rooms: sortedRooms.map(function (room, roomIndex) {
+      var codePieces = room.questions
+        .map(function (question) { return question.codeToUnlockRoom; })
+        .filter(Boolean);
+
+      return {
+        number: room.roomNumber || roomIndex + 1,
+        name: room.title || '',
+        background: room.roomBackground || '',
+        doorPoint: toMapPoint(room.door),
+        unlock: {
+          rule: describeUnlockRule(room.unlockRoomType, room.passPercentage, !!room.passcode),
+          passcodeText: describePasscode(room.passcode, codePieces)
+        },
+        hints: (room.hints || []).map(function (hint) {
+          return {
+            title: hint.hintTitle || '',
+            document: hint.document || hint.link || '',
+            point: toMapPoint(hint)
+          };
+        }),
+        questions: room.questions.map(function (question, questionIndex) {
+          return {
+            index: questionIndex + 1,
+            type: question.type || '',
+            text: getQuestionText(question),
+            answer: getAnswerText(question) || '(no answer stored)',
+            timeLimit: question.timeLimit,
+            codePiece: question.codeToUnlockRoom || '',
+            mustMatch: !!question.answerMustMatch,
+            point: toMapPoint(question)
+          };
+        })
+      };
+    })
+  };
+}
+
+/* ======================================================================
+   Step 3: render
+   ====================================================================== */
+
+/**
+ * Build the answer button. Clicking it copies the answer to the clipboard,
+ * reveals it if it was blurred, and briefly shows a "Copied" badge.
+ */
+function renderAnswerButton(answerText) {
+  var button = createElement('button', 'answer-button', answerText);
+  button.type = 'button';
+  button.title = 'Click to copy';
+
+  var badgeTimer = null;
+
+  button.onclick = function () {
+    button.classList.add('answer-button--revealed');
+
+    copyTextToClipboard(answerText)
+      .then(function () {
+        button.classList.add('answer-button--copied');
+        clearTimeout(badgeTimer);
+        badgeTimer = setTimeout(function () {
+          button.classList.remove('answer-button--copied');
+        }, 1200);
+      })
+      .catch(function () {
+        showStatus('Copy failed. Select the answer text and copy it manually.', true);
+      });
+  };
+
+  return button;
+}
+
+function renderQuestionCard(roomNumber, question) {
+  var card = createElement('div', 'question-card');
+  card.id = 'q-' + roomNumber + '-' + question.index;
+
+  var labelParts = ['Q' + question.index];
+  if (question.type) labelParts.push(question.type);
+  if (question.timeLimit) labelParts.push(question.timeLimit + ' s');
+  if (question.mustMatch) labelParts.push('answer must match');
+
+  card.appendChild(createElement('div', 'question-card__type', labelParts.join(' \u2013 ')));
+  card.appendChild(createElement('div', 'question-card__text', question.text));
+  card.appendChild(renderAnswerButton(question.answer));
+
+  if (question.codePiece) {
+    card.appendChild(createElement('div', 'question-card__code', 'Code piece: ' + question.codePiece));
+  }
+  return card;
+}
+
+/* ---------- Room map ---------- */
+
+/** Scroll to a question card and flash it. Clears the filter if the card is hidden by it. */
+function jumpToQuestion(roomNumber, questionIndex) {
+  var cardId = 'q-' + roomNumber + '-' + questionIndex;
+  var card = document.getElementById(cardId);
+
+  if (!card) {
+    filterInput.value = '';
+    renderResults();
+    card = document.getElementById(cardId);
+    if (!card) return;
+  }
+
+  card.scrollIntoView({ block: 'center' });
+  card.classList.add('question-card--flash');
+  setTimeout(function () { card.classList.remove('question-card--flash'); }, 1500);
+}
+
+var TYPE_COLORS = {
+  FillInTheBlank: '#0ea5e9',
+  SingleChoice: '#6366f1',
+  MultipleChoice: '#d946ef',
+  Pairs: '#16a34a',
+  Memory: '#f97316',
+  Match: '#e11d48',
+  ReOrder: '#14b8a6',
+  Text: '#84cc16'
+};
+
+/** Known types get a fixed colour; unknown types get a stable colour made from their name. */
+function getTypeColor(type) {
+  if (TYPE_COLORS[type]) return TYPE_COLORS[type];
+
+  var hue = 0;
+  for (var i = 0; i < type.length; i++) {
+    hue = (hue * 31 + type.charCodeAt(i)) % 360;
+  }
+  return 'hsl(' + hue + ', 65%, 42%)';
+}
+
+/** Black or white, whichever is easier to read on the given "#rrggbb" colour. */
+function getContrastColor(hex) {
+  var match = /^#?([0-9a-f]{6})$/i.exec(hex || '');
+  if (!match) return '#ffffff';
+
+  var value = parseInt(match[1], 16);
+  var red = (value >> 16) & 255;
+  var green = (value >> 8) & 255;
+  var blue = value & 255;
+  var brightness = (red * 299 + green * 587 + blue * 114) / 1000;
+
+  return brightness > 150 ? '#111827' : '#ffffff';
+}
+
+/**
+ * Build one map marker the way the game draws the sprite:
+ *  - "circle" sprites are solid, everything else is a ring
+ *  - the stored colour and symbol are used
+ *  - sprites with no shape but a picture show the picture (hints)
+ * The label (a number or "H1") sits inside the marker, or in a corner badge
+ * when the marker already shows an icon or picture. onClick may be null.
+ * Pass a question type to let "Color by type" recolour the marker.
+ */
+function createSpriteMarker(sprite, label, title, onClick, type) {
+  var marker = createElement(onClick ? 'button' : 'div', 'map-marker');
+  if (onClick) {
+    marker.type = 'button';
+    marker.onclick = onClick;
+  }
+  marker.title = title;
+  marker.style.left = sprite.left + '%';
+  marker.style.top = sprite.top + '%';
+
+  var color = sprite.color || '#64748b';
+  marker.style.setProperty('--w', sprite.size);
+  marker.style.setProperty('--data-color', color);
+  marker.style.setProperty('--data-contrast', getContrastColor(color));
+
+  // Questions also know their type colour, used when "Color by type" is on
+  if (type) {
+    var typeColor = getTypeColor(type);
+    marker.classList.add('map-marker--typed');
+    marker.style.setProperty('--type-color', typeColor);
+    marker.style.setProperty('--type-contrast', getContrastColor(typeColor));
+  }
+
+  if (!sprite.shape && sprite.image) {
+    marker.classList.add('map-marker--image');
+    marker.style.setProperty('--h', sprite.heightSize);
+
+    var picture = createElement('img');
+    picture.src = sprite.image;
+    picture.alt = '';
+    if (sprite.flipped) picture.style.transform = 'scaleX(-1)';
+    marker.appendChild(picture);
+    if (label) marker.appendChild(createElement('span', 'map-marker__badge', label));
+    return marker;
+  }
+
+  marker.classList.add(sprite.shape === 'circle' ? 'map-marker--circle' : 'map-marker--ring');
+  if (sprite.pulse) marker.classList.add('map-marker--pulse');
+
+  if (sprite.symbol) {
+    var icon = document.createElement('ion-icon');
+    icon.setAttribute('name', sprite.symbol);
+    marker.appendChild(icon);
+    if (label) marker.appendChild(createElement('span', 'map-marker__badge', label));
+  } else if (label) {
+    marker.appendChild(document.createTextNode(label));
+  }
+  return marker;
+}
+
+/**
+ * Build the map for one room: the room background with a marker for every
+ * question (numbered like the cards), every hint, and the door.
+ * Questions hidden by the current filter are dimmed.
+ */
+function renderRoomMap(room, filteredQuestions) {
+  var matchingIndexes = {};
+  filteredQuestions.forEach(function (question) { matchingIndexes[question.index] = true; });
+
+  var map = createElement('div', 'room-map');
+  var canvas = createElement('div', 'room-map__canvas');
+  if (room.background) {
+    canvas.style.backgroundImage = 'url("' + room.background.replace(/"/g, '%22') + '")';
+  }
+
+  room.questions.forEach(function (question) {
+    if (!question.point) return;
+
+    var marker = createSpriteMarker(
+      question.point,
+      String(question.index),
+      'Q' + question.index + ' (' + question.type + '): ' + question.text,
+      function () { jumpToQuestion(room.number, question.index); },
+      question.type
+    );
+    if (!matchingIndexes[question.index]) marker.classList.add('map-marker--dimmed');
+    canvas.appendChild(marker);
+  });
+
+  room.hints.forEach(function (hint, index) {
+    if (!hint.point) return;
+
+    var onClick = hint.document
+      ? function () { window.open(hint.document, '_blank', 'noopener'); }
+      : null;
+    canvas.appendChild(createSpriteMarker(hint.point, 'H' + (index + 1), 'Hint: ' + hint.title, onClick));
+  });
+
+  if (room.doorPoint) {
+    var doorTitle = [room.unlock.rule, room.unlock.passcodeText].filter(Boolean).join('. ') || 'Door';
+    canvas.appendChild(createSpriteMarker(room.doorPoint, '', doorTitle, null));
+  }
+  map.appendChild(canvas);
+
+  // Short explanation of what is on the map
+  var legend = createElement('div', 'room-map__legend');
+  legend.appendChild(createElement('span', null, 'Numbers match the question cards'));
+  if (room.hints.length) legend.appendChild(createElement('span', null, 'H1, H2... are hints (click to open the document)'));
+  if (room.doorPoint) legend.appendChild(createElement('span', null, 'The lock is the door'));
+  map.appendChild(legend);
+
+  // Colour key for "Color by type" (hidden until that toggle is on)
+  var typeLegend = createElement('div', 'room-map__legend room-map__type-legend');
+  var typesInRoom = [];
+  room.questions.forEach(function (question) {
+    if (question.point && question.type && typesInRoom.indexOf(question.type) < 0) {
+      typesInRoom.push(question.type);
+    }
+  });
+  typesInRoom.forEach(function (type) {
+    var item = createElement('span');
+    var swatch = createElement('span', 'legend-swatch');
+    swatch.style.background = getTypeColor(type);
+    item.appendChild(swatch);
+    item.appendChild(document.createTextNode(type));
+    typeLegend.appendChild(item);
+  });
+  map.appendChild(typeLegend);
+
+  // Hint list, so each hint's text and document are reachable from the map
+  if (room.hints.length) {
+    var hintList = createElement('ul', 'room-map__hints');
+    room.hints.forEach(function (hint, index) {
+      var item = createElement('li');
+      item.appendChild(document.createTextNode('H' + (index + 1) + ': ' + (hint.title.trim() || '(no text)') + ' '));
+      if (hint.document) {
+        var link = createElement('a', null, 'Open document');
+        link.href = hint.document;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        item.appendChild(link);
+      }
+      hintList.appendChild(item);
+    });
+    map.appendChild(hintList);
+  }
+
+  return map;
+}
+
+function renderRoom(room, questions) {
+  var section = createElement('section', 'room');
+  section.id = 'room-' + room.number;
+
+  var heading = createElement('h2', 'room__heading');
+  heading.appendChild(createElement('span', 'room__number', room.number + '.'));
+  heading.appendChild(document.createTextNode(room.name || 'Untitled room'));
+
+  var mapButton = createElement('button', 'btn btn--secondary btn--small',
+    openMaps[room.number] ? 'Hide map' : 'Show map');
+  mapButton.type = 'button';
+  heading.appendChild(mapButton);
+  section.appendChild(heading);
+
+  var unlockLines = [room.unlock.rule, room.unlock.passcodeText].filter(Boolean);
+  if (unlockLines.length) {
+    var unlockBox = createElement('div', 'room__unlock');
+    unlockLines.forEach(function (line) {
+      unlockBox.appendChild(createElement('div', null, line));
+    });
+    section.appendChild(unlockBox);
+  }
+
+  var mapHolder = createElement('div');
+  section.appendChild(mapHolder);
+  if (openMaps[room.number]) mapHolder.appendChild(renderRoomMap(room, questions));
+
+  mapButton.onclick = function () {
+    var shouldOpen = !openMaps[room.number];
+    openMaps[room.number] = shouldOpen;
+
+    mapHolder.textContent = '';
+    if (shouldOpen) mapHolder.appendChild(renderRoomMap(room, questions));
+    mapButton.textContent = shouldOpen ? 'Hide map' : 'Show map';
+  };
+
+  questions.forEach(function (question) {
+    section.appendChild(renderQuestionCard(room.number, question));
+  });
+  return section;
+}
+
+function renderRoomNavLink(room, visibleQuestionCount) {
+  var link = createElement('a', 'room-nav__link', room.number + '. ' + (room.name || 'Untitled'));
+  link.href = '#room-' + room.number;
+  link.appendChild(document.createTextNode(' '));
+  link.appendChild(createElement('small', 'room-nav__count', '(' + visibleQuestionCount + ')'));
+  return link;
+}
+
+function questionMatchesFilter(question, filterText) {
+  if (!filterText) return true;
+  return (question.text + ' ' + question.answer + ' ' + question.type).toLowerCase().indexOf(filterText) > -1;
+}
+
+function renderResults() {
+  roomList.textContent = '';
+  roomNav.textContent = '';
+  if (!gameModel) return;
+
+  var filterText = filterInput.value.trim().toLowerCase();
+  var visibleQuestionTotal = 0;
+
+  gameModel.rooms.forEach(function (room) {
+    var matchingQuestions = room.questions.filter(function (question) {
+      return questionMatchesFilter(question, filterText);
+    });
+    if (!matchingQuestions.length) return;
+
+    visibleQuestionTotal += matchingQuestions.length;
+    roomList.appendChild(renderRoom(room, matchingQuestions));
+    roomNav.appendChild(renderRoomNavLink(room, matchingQuestions.length));
+  });
+
+  if (!visibleQuestionTotal) {
+    roomList.appendChild(createElement('p', 'empty-message', 'No questions match the filter.'));
+  }
+}
+
+/* ---------- Game info panel ---------- */
+
+function addInfoRow(list, label, value) {
+  if (value === undefined || value === null || value === '') return;
+
+  list.appendChild(createElement('dt', null, label));
+  var valueElement = createElement('dd');
+  if (value instanceof Node) valueElement.appendChild(value);
+  else valueElement.textContent = String(value);
+  list.appendChild(valueElement);
+}
+
+/** Pull the readable paragraphs out of an HTML string without inserting any of that HTML. */
+function htmlToParagraphs(html) {
+  var parsed = new DOMParser().parseFromString(html, 'text/html');
+  var paragraphs = Array.prototype.map.call(parsed.querySelectorAll('p'), function (paragraph) {
+    return paragraph.textContent.trim();
+  }).filter(Boolean);
+
+  if (!paragraphs.length && parsed.body.textContent.trim()) {
+    paragraphs = [parsed.body.textContent.trim()];
+  }
+  return paragraphs;
+}
+
+function addTextSection(container, heading, text) {
+  if (!text) return;
+  container.appendChild(createElement('h3', 'game-info__subheading', heading));
+  container.appendChild(createElement('p', 'game-info__text', text));
+}
+
+function renderGameInfo() {
+  gameInfoBody.textContent = '';
+  var info = gameModel && gameModel.info;
+  if (!info) { gameInfoPanel.hidden = true; return; }
+
+  var list = createElement('dl', 'game-info__list');
+  addInfoRow(list, 'Title', gameModel.title);
+  addInfoRow(list, 'Game code', info.gameCode);
+
+  if (info.gameUrl) {
+    var link = createElement('a', null, info.gameUrl);
+    link.href = info.gameUrl;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    addInfoRow(list, 'Join link', link);
+  }
+
+  addInfoRow(list, 'Play mode', info.playMode);
+  addInfoRow(list, 'Subject', info.subject);
+  addInfoRow(list, 'Grades', info.grades);
+  addInfoRow(list, 'Language', info.language);
+  addInfoRow(list, 'Time limit', info.timeLimit);
+  addInfoRow(list, 'Max players', info.maxPlayers);
+  addInfoRow(list, 'Text to speech', info.textToSpeech);
+  addInfoRow(list, 'Show answers while playing', info.showAnswersWhilePlaying);
+  gameInfoBody.appendChild(list);
+
+  addTextSection(gameInfoBody, 'Short description', info.shortDescription);
+  addTextSection(gameInfoBody, 'Description', info.detailDescription);
+
+  if (info.teacherGuide) {
+    gameInfoBody.appendChild(createElement('h3', 'game-info__subheading', 'Teacher guide'));
+    htmlToParagraphs(info.teacherGuide).forEach(function (paragraph) {
+      gameInfoBody.appendChild(createElement('p', 'game-info__text', paragraph));
+    });
+  }
+
+  gameInfoPanel.hidden = false;
+}
+
+/** Plain-text version of the whole answer key, for the clipboard. */
+function buildPlainText() {
+  if (!gameModel) return '';
+
+  var text = gameModel.title + '\n';
+  gameModel.rooms.forEach(function (room) {
+    text += '\n' + room.number + '. ' + room.name + '\n';
+    if (room.unlock.rule) text += room.unlock.rule + '\n';
+    if (room.unlock.passcodeText) text += room.unlock.passcodeText + '\n';
+    room.questions.forEach(function (question, index) {
+      text += '\nQ' + (index + 1) + ' (' + question.type + '): ' + question.text + '\nA: ' + question.answer + '\n';
+      if (question.codePiece) text += 'Code piece: ' + question.codePiece + '\n';
+    });
+  });
+  return text;
+}
+
+/* ======================================================================
+   Step 4: wire up the UI
+   ====================================================================== */
+
+function showStatus(message, isError) {
+  statusMessage.className = 'status-message' + (isError ? ' status-message--error' : '');
+  statusMessage.textContent = message;
+}
+
+function extractAndRender() {
+  showStatus('', false);
+  gameModel = null;
+  openMaps = {};
+  gameInfoPanel.hidden = true;
+
+  var text = inputText.value;
+  if (!text.trim()) {
+    resultsLayout.hidden = true;
+    return;
+  }
+
+  var extracted = extractGameData(text);
+  if (!extracted) {
+    resultsLayout.hidden = true;
+    showStatus('No game data found. Expected an object with a "rooms" array, each room having "questions".', true);
+    return;
+  }
+
+  gameModel = buildGameModel(extracted);
+  resultsLayout.hidden = false;
+
+  var summary = gameModel.title + ': ' + gameModel.rooms.length + ' rooms, ' +
+    extracted.questionCount + ' questions. JSON located at character ' + extracted.startIndex + '; ' +
+    extracted.ignoredCharacters + ' characters of surrounding text ignored.';
+  if (extracted.matchingBlockCount > 1) {
+    summary += ' ' + extracted.matchingBlockCount + ' matching blocks found; largest used.';
+  }
+  showStatus(summary, false);
+  renderGameInfo();
+  renderResults();
+}
+
+/**
+ * Show why fetching failed. When the request never reached the server (offline,
+ * or the browser blocked it because this page is opened from a file), also
+ * offer the API link so the JSON can be copied and pasted by hand.
+ */
+function showFetchError(url, error) {
+  var isHttpError = /^HTTP/.test(error.message);
+
+  statusMessage.className = 'status-message status-message--error';
+  statusMessage.textContent = '';
+
+  if (error.message === 'HTTP 404') {
+    statusMessage.textContent = 'No game found for that code (HTTP 404).';
+  } else if (isHttpError) {
+    statusMessage.textContent = 'The server answered with ' + error.message + '.';
+  } else {
+    statusMessage.textContent = 'Could not fetch the game. You may be offline, or the browser blocked the ' +
+      'request (CORS), which is likely when this page is opened from a file. ' +
+      'Open the API link in a new tab, copy everything, and paste it below: ';
+
+    var link = createElement('a', null, url);
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noopener';
+    statusMessage.appendChild(link);
+  }
+}
+
+/** Fetch the game for the typed code and run it through the decoder. */
+function fetchGameByCode() {
+  var code = gameCodeInput.value.trim();
+
+  // Also accept a whole join link, like https://play.escaply.com/join/DI663GA
+  var joinLinkMatch = /\/join\/([A-Za-z0-9]+)/.exec(code);
+  if (joinLinkMatch) code = joinLinkMatch[1];
+  code = code.toUpperCase();
+
+  if (!/^[A-Z0-9]{3,20}$/.test(code)) {
+    showStatus('Enter a game code, for example DI663GA.', true);
+    return;
+  }
+  gameCodeInput.value = code;
+
+  var url = 'https://play.escaply.com/api/quest/' + encodeURIComponent(code);
+  showStatus('Fetching ' + code + '...', false);
+  fetchButton.disabled = true;
+
+  fetch(url)
+    .then(function (response) {
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      return response.text();
+    })
+    .then(function (text) {
+      inputText.value = text;
+      extractAndRender();
+    })
+    .catch(function (error) {
+      showFetchError(url, error);
+    })
+    .then(function () {
+      fetchButton.disabled = false;
+    });
+}
+
+function toggleAnswersHidden() {
+  var nowHidden = document.body.classList.toggle('answers-hidden');
+  toggleButton.textContent = nowHidden ? 'Show answers' : 'Hide answers';
+}
+
+function toggleColorByType() {
+  var nowOn = document.body.classList.toggle('color-by-type');
+  colorTypeButton.setAttribute('aria-pressed', String(nowOn));
+}
+
+function copyAnswerKey() {
+  var text = buildPlainText();
+  if (!text) return;
+
+  copyTextToClipboard(text)
+    .then(function () {
+      copyButton.textContent = 'Copied';
+      setTimeout(function () { copyButton.textContent = 'Copy as text'; }, 1200);
+    })
+    .catch(function () {
+      showStatus('Copy failed.', true);
+    });
+}
+
+extractButton.onclick = extractAndRender;
+toggleButton.onclick = toggleAnswersHidden;
+copyButton.onclick = copyAnswerKey;
+colorTypeButton.onclick = toggleColorByType;
+fetchButton.onclick = fetchGameByCode;
+gameCodeInput.addEventListener('keydown', function (event) {
+  if (event.key === 'Enter') fetchGameByCode();
+});
+filterInput.addEventListener('input', renderResults);
+// Wait a tick so the pasted text is in the textarea before extracting
+inputText.addEventListener('paste', function () { setTimeout(extractAndRender, 0); });
+</script>
+</body>
+</html>
